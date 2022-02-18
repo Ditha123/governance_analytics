@@ -1,9 +1,10 @@
 ---
-title: "Deliverable 2 final"
-output:
- 
-  html_document: default
+title: "542 Deliverable 2_reformatted"
+output: html_document
 ---
+
+
+
 
 #row.names(fromPy) <-fromPy$US.States
 #fromPy$US.States=NULL
@@ -226,7 +227,7 @@ base= ggplot(data=fromPy,
 base + geom_text(size=2)
 
 # see some:
-fromPy[,c('dim1','dim2')][1:10,]
+fromPy[,c('dim1')][1:10,]
 
 base= ggplot(data=fromPy,
              aes(x=dim1, y=dim2,

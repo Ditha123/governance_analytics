@@ -19,8 +19,7 @@ myFile=url(link)
 fromPy=read.csv(link)
 str(fromPy)
 head(fromPy)
-```
-```{r Cluster, include=FALSE}
+
 #Custering 
 selection= c("US.States","HS.Degree..","Bachelors.Degree..","Advanced.Degree..","Median.Household.Income")
 dataToCluster=fromPy[,selection]
@@ -48,9 +47,7 @@ dataToCluster_DM=daisy(x=dataToCluster, metric = "gower")
 
 #Computer CLUSTERS
 library(factoextra)
-```
 
-```{r Cluster-viz, include=FALSE}
 ###CLustering
 #for partitioning
 fviz_nbclust(dataToCluster, 
@@ -79,9 +76,7 @@ fviz_nbclust(dataToCluster,
 NumberOfClusterDesired=2
 set.seed(31)
 
-```
 
-```{r matrix, include=FALSE}
 # function to compute total within-cluster sum of squares
 #Elbow Method k=2 as half the variance is explained by 2 variables 
 fviz_nbclust(dataToCluster, kmeans, method = "wss", k.max = 10) + theme_minimal() + ggtitle("the Elbow Method")
@@ -120,9 +115,7 @@ res.diana= hcut(dataToCluster_DM,
 
 
 fromPy
-```
 
-```{r New DF, include=FALSE}
 #2. Clustering results
 
 #ADDING TO ORGINAL DF
@@ -168,7 +161,7 @@ fromPy$dia=dplyr::recode_factor(fromPy$dia,
 
 
 
-#library(factoextra)
+library(factoextra)
 
 #install.packages("MASS")
 #install.packages("dplyr")
@@ -201,7 +194,7 @@ diaPoor=rownames(diaEval[diaEval$sil_width<0,])
 
 library("qpcR") 
 options(rgl.useNULL = TRUE)
-library(rgl)
+#library(rgl)
 
 ##Identify States that are not clustered
 bap_Clus=as.data.frame(qpcR:::cbind.na(sort(pamPoor), sort(agnPoor),sort(diaPoor)))
@@ -269,9 +262,9 @@ agnPlot + geom_text_repel(aes(label=LABELagn))
 fviz_dend(res.agnes,k=NumberOfClusterDesired, cex = 0.45, horiz = T,main = "AGNES approach")
 #Diana Approach
 fviz_dend(res.diana,k=NumberOfClusterDesired, cex = 0.45, horiz = T,main = "DIANA approach")
-```
 
-```{r Factor Analysis, include=FALSE}
+
+
 
 ##PCA
 selection= c("US.States","HS.Degree..","Bachelors.Degree..","Advanced.Degree..","Median.Household.Income")
@@ -331,9 +324,9 @@ evalCFA2[c( 'rmsea.ci.lower','rmsea','rmsea.ci.upper')] ##rmse between 0.01-0.04
 library(semPlot)
 semPaths(fit, what='std', nCharNodes=0, sizeMan=12,
          edge.label.cex=1.5, fade=T,residuals = F)
-```
 
-```{r Regression Setup, include=FALSE}
+
+
 ##Regrssion
 ### Can we Predict Life Expectancy based on the catagoricals 
 install.packages ("lattice")
@@ -363,10 +356,10 @@ hypo2=formula(Average.Life.Expectancy~ Advanced.Degree..+ Bachelors.Degree..)
 scale(fromPy)
 
 
-```
 
 
-```{r data partition , include=FALSE}
+
+
 ##Predictive Approach
 
 
@@ -379,9 +372,7 @@ testGauss  = fromPy[-selection, ]
 
 ###both Models have High r2, regression test of 5 random samples 
 ctrl = trainControl(method = 'cv',number = 5)
-```
 
-```{r Hypo 1g, include=FALSE}
 ##Hypo 1
 gauss1CV = train(hypo1,
                  data = trainGauss, 
@@ -397,9 +388,7 @@ postResample(obs = testGauss$Average.Life.Expectancy,
              pred=predictedVal1)
              
              ##R2 Score is 0.32
-```
 
-```{r Hypo 2, include=FALSE}
 #Hypo 2
 gauss2CV = train(hypo2,
                  data = trainGauss, 
