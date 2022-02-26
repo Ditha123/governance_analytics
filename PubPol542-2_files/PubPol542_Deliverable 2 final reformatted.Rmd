@@ -1,0 +1,558 @@
+---
+title: "542 Deliverable 2_reformatted-knit"
+output: html_document
+---
+jkh;ioxc
+
+
+
+```{r setupknit, include=FALSE}
+#knitr::opts_chunk$set(echo = TRUE)
+library (knitr)
+```
+
+```{r setup, include=TRUE}
+link = 'https://github.com/Ditha123/governance_analytics/raw/main/Deliverable%201/alldatafinal.csv'
+myFile=url(link)
+fromPy=read.csv(link)
+str(fromPy)
+head(fromPy)
+```
+
+```{r Cluster, include=TRUE}
+#Custering 
+selection= c("US.States","HS.Degree..","Bachelors.Degree..","Advanced.Degree..","Median.Household.Income")
+dataToCluster=fromPy[,selection]
+```
+
+```{r Rows-viz, include=TRUE}
+
+##Setting Row Names
+row.names(dataToCluster)=dataToCluster$US.States
+dataToCluster$US.States=NULL
+head(dataToCluster)
+
+```
+
+```{r datascaling, include=TRUE}
+
+#scaling data
+dataToCluster=scale(dataToCluster)
+colnames(dataToCluster)
+```
+
+```{r Boxplot-viz, include=TRUE}
+##Data has been transformmed:scalling
+boxplot(dataToCluster,horizontal = T, las=2,cex.axis=0.4)
+
+```
+
+```{r Distance-viz, include=TRUE}
+#Compute the DISTANCE MATRIX:
+set.seed(999) # this is for replicability of results
+
+```
+
+```{r Cluster-setup, include=TRUE}
+library(cluster)
+dataToCluster_DM=daisy(x=dataToCluster, metric = "gower")
+
+```
+
+```{r viz-setup, include=TRUE}
+#Computer CLUSTERS
+library(factoextra)
+```
+
+```{r part-viz, include=TRUE}
+###CLustering
+#for partitioning
+fviz_nbclust(dataToCluster, 
+             pam,
+             diss=dataToCluster_DM,
+             method = "gap_stat",
+              k.max = 10,verbose = F)
+```
+
+```{r hier-viz, include=TRUE}
+##for hierarchial
+fviz_nbclust(dataToCluster, 
+             hcut,
+             diss=dataToCluster_DM,
+             method = "gap_stat",
+             k.max = 10,
+             verbose = F,
+             hc_func = "agnes")
+```
+
+```{r div-viz, include=TRUE}
+##for divisive
+fviz_nbclust(dataToCluster, 
+             hcut,
+             diss=dataToCluster_DM,
+             method = "gap_stat",
+             k.max = 10,
+             verbose = F,
+             hc_func = "diana")
+
+```
+
+```{r clust-setup, include=TRUE}
+NumberOfClusterDesired=2
+set.seed(31)
+
+```
+
+```{r elbow, include=TRUE}
+# function to compute total within-cluster sum of squares
+#Elbow Method k=2 as half the variance is explained by 2 variables 
+fviz_nbclust(dataToCluster, kmeans, method = "wss", k.max = 10) + theme_minimal() + ggtitle("the Elbow Method")
+
+```
+
+```{r gap-stat, include=TRUE}
+##Gap Statistic k=1
+gap_stat <- clusGap(dataToCluster, FUN = kmeans, nstart = 30, K.max = 10, B = 50)
+fviz_gap_stat(gap_stat) + theme_minimal() + ggtitle("fviz_gap_stat: Gap Statistic")
+```
+
+```{r sil, include=TRUE}
+#Silloette Method the desired K is 2
+fviz_nbclust(dataToCluster, kmeans, method = "silhouette", k.max = 10) + theme_minimal() + ggtitle("The Silhouette Plot")
+
+```
+
+```{r Cluster-viz-pam, include=TRUE}
+#selected k=2 as by 2 methods, half the variance is explained by only 2 components
+NumberOfClusterDesired=2
+
+# Partitioning technique
+res.pam = pam(x=dataToCluster_DM,
+              k = NumberOfClusterDesired,
+              cluster.only = F)
+```
+
+```{r Cluster-hier-agnes, include=TRUE}
+# Hierarchical technique- agglomerative approach
+
+library(factoextra)
+res.agnes= hcut(dataToCluster_DM, 
+                k = NumberOfClusterDesired,
+                isdiss=TRUE,
+                hc_func='agnes',
+                hc_method = "ward.D2")
+
+```
+
+```{r Cluster-viz-diana, include=TRUE}
+# Hierarchical technique- divisive approach
+res.diana= hcut(dataToCluster_DM, 
+                k = NumberOfClusterDesired,
+                isdiss=TRUE,
+                hc_func='diana',
+                hc_method = "ward.D2")
+                
+
+
+#fromPy
+```
+
+```{r New-df, include=TRUE}
+#2. Clustering results
+
+#ADDING TO ORGINAL DF
+fromPy
+fromPy$pam=as.factor(res.pam$clustering)
+fromPy$agn=as.factor(res.agnes$cluster)
+fromPy$dia=as.factor(res.diana$cluster)
+```
+
+```{r Cluster-verify-pam, include=TRUE}
+
+#VERIFY ORDINARY CLUSTERS
+
+aggregate(data=fromPy,
+          Average.Life.Expectancy~pam,
+          FUN=mean)
+```
+
+```{r Cluster-verify-agn, include=TRUE}         
+aggregate(data=fromPy,
+        Average.Life.Expectancy~agn,
+         FUN=mean)
+```
+
+```{r Cluster-verify-dia, include=TRUE}
+aggregate(data=fromPy,
+        Average.Life.Expectancy~dia,
+          FUN=mean)
+```
+
+```{r Cluster-recode, include=TRUE}
+##recoding variables 
+fromPy$pam=dplyr::recode_factor(fromPy$pam, 
+                  `1` = '4',`2`='3',`3`='2',`4`='1')
+fromPy$agn=dplyr::recode_factor(fromPy$agn, 
+                  `1` = '4',`2`='3',`3`='2',`4`='1')
+fromPy$dia=dplyr::recode_factor(fromPy$dia, 
+                  `1` = '4',`2`='3',`3`='2',`4`='1')
+                  
+```
+
+```{r Cluster-df, include=TRUE}
+
+##Recoding and attaching data to original datac
+fromPy$pam=dplyr::recode_factor(fromPy$pam, 
+                  `1` = '4',`2`='3',`3`='2',`4`='1')
+fromPy$agn=dplyr::recode_factor(fromPy$agn, 
+                  `1` = '4',`2`='3',`3`='2',`4`='1')
+fromPy$dia=dplyr::recode_factor(fromPy$dia, 
+                  `1` = '4',`2`='3',`3`='2',`4`='1')
+                  
+                  #fromPy
+
+```
+
+```{r lib-setup, include=TRUE}
+
+
+#library(factoextra)
+
+#install.packages("MASS")
+#install.packages("dplyr")
+#install.packages("minpack.lm")
+#install.packages ("rgl")
+#install.packages ("robustbase")
+#install.packages ("Matrix")
+#install.packages("qpcR")
+#install.packages ("fviz")
+
+```
+
+```{r Cluster-viz, include=TRUE}
+#Plot silhouettes
+library (factoextra)
+```
+
+```{r viz-pam, include=TRUE}
+fviz_silhouette(res.pam)
+
+```
+
+```{r viz-agnes, include=TRUE}
+fviz_silhouette(res.agnes)
+
+```
+
+```{r viz-dia, include=TRUE}
+fviz_silhouette(res.diana)
+```
+
+```{r verify-var, include=TRUE}
+##What is not factored properly 
+head(data.frame(res.pam$silinfo$widths),10)
+```
+
+```{r varify-var-1, include=TRUE}
+pamEval=data.frame(res.pam$silinfo$widths)
+agnEval=data.frame(res.agnes$silinfo$widths)
+diaEval=data.frame(res.diana$silinfo$widths)
+
+```
+
+```{r evaluate, include=TRUE}
+
+pamPoor=rownames(pamEval[pamEval$sil_width<0,])
+agnPoor=rownames(agnEval[agnEval$sil_width<0,])
+diaPoor=rownames(diaEval[diaEval$sil_width<0,])
+```
+
+```{r Viz-setup, include=TRUE}
+#library("qpcR") 
+options(rgl.useNULL = TRUE)
+library(rgl)
+```
+
+```{r Cluster-not-states, include=TRUE}
+
+##Identify States that are not clustered
+bap_Clus=as.data.frame(qpcR:::cbind.na(sort(pamPoor), sort(agnPoor),sort(diaPoor)))
+names(bap_Clus)=c("pam","agn","dia")
+bap_Clus
+
+```
+
+```{r Analysis, include=TRUE}
+###The recommened clusters for this data set is only 1 by the gap statistic ,which means that every element in my dataset belongs to one cluster. Based on the silloette and elbox methods, the recommended cluser size is 2. 
+```
+
+```{r Cluster-2t, include=TRUE}
+projectedData = cmdscale(dataToCluster_DM, k=2)
+# save coordinates to original data frame:
+
+fromPy$dim1 = projectedData[,1]
+fromPy$dim2 = projectedData[,2]
+```
+
+```{r save, include=TRUE}
+# save coordinates to original data frame:
+fromPy[,c('dim1','dim2')][1:10,]
+
+```
+
+```{r ggplot, include=TRUE}
+####map 
+base= ggplot(data=fromPy,
+             aes(x=dim1, y=dim2,
+                 label=US.States)) 
+base + geom_text(size=2)
+
+```
+
+```{r Cluster-not, include=TRUE}
+# see some:
+fromPy[,c('dim1','dim2')][1:10,]
+
+base= ggplot(data=fromPy,
+             aes(x=dim1, y=dim2,
+                 label=US.States)) 
+base + geom_text(size=2)
+```
+
+```{r colormap-map, include=TRUE}
+#Color the map using the labels from PAM:
+pamPlot=base + labs(title = "PAM") + geom_point(size=2,
+                                              aes(color=pam),
+                                              show.legend = T) 
+
+```
+
+```{r colormap-agnes, include=TRUE}                                           
+#Color the map using the labels from Hierarchical AGNES:
+agnPlot=base + labs(title = "AGNES") + geom_point(size=2,
+                                              aes(color=agn),
+                                              show.legend = T) 
+
+```
+
+```{r colormap-diana, include=TRUE}
+#Color the map using the labels from Hierarchical DIANA:
+  diaPlot=base + labs(title = "DIANA") + geom_point(size=2,
+                                              aes(color=dia),
+                                              show.legend = T)                                      
+
+```
+
+```{r Cluster-viz-1, include=TRUE}
+##Comparing Clustering visually
+library(ggpubr)
+ggarrange(pamPlot, agnPlot, diaPlot,ncol = 3,common.legend = T)
+```
+
+```{r labels, include=TRUE}
+##Preparing Labels
+# If name of country in black list, use it, else get rid of it
+LABELpam=ifelse(fromPy$US.States%in%pamPoor,fromPy$US.States,"")
+LABELdia=ifelse(fromPy$US.States%in%diaPoor,fromPy$US.States,"")
+LABELagn=ifelse(fromPy$US.States%in%agnPoor,fromPy$US.States,"")
+
+```
+
+```{r Cluster-plot, include=TRUE}
+library(ggrepel)
+##Pam Plat
+pamPlot + geom_text_repel(aes(label=LABELpam))
+#Diana Plot
+diaPlot + geom_text_repel(aes(label=LABELdia))
+#Agnes PLot
+agnPlot + geom_text_repel(aes(label=LABELagn))
+```
+
+```{r Agnes-Diana-Plot, include=TRUE}
+#AGNES Approach
+fviz_dend(res.agnes,k=NumberOfClusterDesired, cex = 0.45, horiz = T,main = "AGNES approach")
+#Diana Approach
+fviz_dend(res.diana,k=NumberOfClusterDesired, cex = 0.45, horiz = T,main = "DIANA approach")
+```
+
+```{r Factor Analysis, include=TRUE}
+
+##PCA
+selection= c("US.States","HS.Degree..","Bachelors.Degree..","Advanced.Degree..","Median.Household.Income")
+dataForFA=fromPy[,selection]
+
+```
+
+```{r PCA-Setup, include=TRUE}
+##Setting Row Names
+row.names(dataForFA)=dataForFA$US.States
+dataForFA$US.States=NULL
+
+##Scaling Data
+head(dataForFA)
+dataForFA=scale(dataForFA)
+
+#install.packages ("lavaan")
+library(lavaan)
+
+##rename variable 
+```
+
+```{r PCA-Model, include=TRUE}
+##Model using Lavaan
+model='
+educ_LE=~HS.Degree..+Bachelors.Degree..+Advanced.Degree..+Median.Household.Income
+'
+
+```
+
+```{r PCA-fit, include=TRUE}
+##identifying Fit
+fit<-cfa(model, data = dataForFA,std.lv=TRUE)
+indexCFA=lavPredict(fit)
+
+```
+
+```{r Index-scale, include=TRUE}
+##resetting Index
+indexCFA[1:10]
+
+##removing negatives and forcing index between 0-10
+library(scales)
+indexCFANorm=rescale(as.vector(indexCFA), 
+                     to = c(0, 10))
+indexCFANorm[1:10]
+
+fromPy$demo_FA=indexCFANorm
+```
+
+```{r comparison, include=TRUE}
+#Comparing Index with Original Score 
+base=ggplot(data=fromPy,
+            aes(x=demo_FA,y=c(scale(Average.Life.Expectancy))))
+base+geom_point()
+
+```
+
+```{r Eval-measures, include=TRUE}
+##Evaluation MEasures for Life Expectancy
+evalCFA1=parameterEstimates(fit, standardized =TRUE)
+evalCFA1[evalCFA1$op=="=~",c('rhs','std.all','pvalue')]
+
+```
+
+```{r PCA-coeff, include=TRUE}
+##Coefficiencts 
+evalCFA2=as.list(fitMeasures(fit))
+evalCFA2[c("chisq", "df", "pvalue")] ##Chi2 value is high, 6.074
+
+evalCFA2$tli # > 0.90 ##Tucker Lewis Value > 0.90
+
+evalCFA2[c( 'rmsea.ci.lower','rmsea','rmsea.ci.upper')] ##rmse between 0.01-0.04, average at 0.2 means the model can relatively predict well 
+
+```
+
+```{r RR-plot, include=TRUE}
+##Plot of the residuals 
+library(semPlot)
+semPaths(fit, what='std', nCharNodes=0, sizeMan=12,
+         edge.label.cex=1.5, fade=T,residuals = F)
+```
+
+```{r Regression Setup, include=TRUE}
+##Regrssion
+### Can we Predict Life Expectancy based on the catagoricals 
+#install.packages ("lattice")
+#install.packages ("ggplot2")
+#install.packages ("caret")
+library (caret)
+```
+
+
+```{r Hypothesis-Regression, include=TRUE}
+set.seed (123)
+##Hypo 1:Life Expectancy Increases as Income Increases
+hypo1=formula(Average.Life.Expectancy~ Median.Household.Income)
+##Hypo 2: Life Expectancy Increases as Educational Attainment Increases 
+hypo2=formula(Average.Life.Expectancy~ Advanced.Degree..+ Bachelors.Degree..)
+
+```
+
+```{r Setup-NA, include=TRUE}
+#selection=c("US.States","Average.Life.Expectancy","HS.Degree..","Bachelors.Degree..","Advanced.Degr
+#ee.." , "Median.Household.Income" )    
+#fromPy_Scaled=fromPy[,selection]
+
+##Scaled Data Set 
+#row.names(fromPy_Scaled)=fromPy_Scaled$US.States
+#fromPy_Scaled
+#fromPy_Scaled['US.States']=NULL
+#fromPy_Scaled=scale(fromPy_Scaled)
+#head(fromPy_Scaled)
+#scale(fromPy)
+
+
+```
+
+
+```{r data-partition , include=TRUE}
+##Predictive Approach
+
+
+selection = createDataPartition(fromPy$Average.Life.Expectancy,
+                                p = 0.75,
+                                list = FALSE)
+                                
+trainGauss = fromPy[ selection, ]
+testGauss  = fromPy[-selection, ]
+
+###both Models have High r2, regression test of 5 random samples 
+ctrl = trainControl(method = 'cv',number = 5)
+```
+
+```{r Hypo 1g, include=TRUE}
+##Hypo 1
+gauss1CV = train(hypo1,
+                 data = trainGauss, 
+                 method = 'glm',
+                 trControl = ctrl)
+
+gauss1CV ###High R2 Score almost 0.69
+
+##Hypo 1 test 
+predictedVal1<-predict(gauss1CV,testGauss)
+
+postResample(obs = testGauss$Average.Life.Expectancy,
+             pred=predictedVal1)
+             
+             ##R2 Score is 0.32
+```
+
+```{r Hypo 2, include=TRUE}
+#Hypo 2
+gauss2CV = train(hypo2,
+                 data = trainGauss, 
+                 method = 'glm',
+                 trControl = ctrl)
+
+gauss2CV ##High R2Score, almost 0.79
+```
+
+```{r Hypo2-test, include=TRUE}
+
+###Hypo 2 test 
+predictedVal<-predict(gauss2CV,testGauss)
+
+postResample(obs = testGauss$Average.Life.Expectancy,
+             pred=predictedVal)
+
+###R2 post sample is still high--0.33 almost )
+```
+
+
+
+
+
+         
+
+
